@@ -57,6 +57,16 @@ jobs:
       - name: Create data directory
         run: mkdir -p data
 
+      - name: Debug environment variables
+        run: |
+          echo "=== Checking Secrets ==="
+          echo "EMAIL_METHOD: $EMAIL_METHOD"
+          echo "LLM_API_KEY is set: $(if [ -n "$LLM_API_KEY" ]; then echo 'YES (length: ${#LLM_API_KEY})'; else echo 'NO'; fi)"
+          echo "LLM_BASE_URL: $LLM_BASE_URL"
+          echo "LLM_MODEL: $LLM_MODEL"
+          echo "EMAIL_TO: $EMAIL_TO"
+          echo "SMTP_HOST: $SMTP_HOST"
+
       - name: Run Skills Trending
         env:
           EMAIL_METHOD: ${{ secrets.EMAIL_METHOD || 'resend' }}

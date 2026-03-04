@@ -2,6 +2,10 @@
 配置模块 - 包含所有配置信息和主题定义
 """
 import os
+from dotenv import load_dotenv
+
+# 加载 .env 文件
+load_dotenv()
 
 # ============================================================================
 # LLM API Configuration

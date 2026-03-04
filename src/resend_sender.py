@@ -21,7 +21,7 @@ class ResendSender:
 
     def send_email(
         self,
-        to: str,
+        to: str | list,
         subject: str,
         html_content: str,
         from_email: str = "onboarding@resend.dev"
@@ -30,7 +30,7 @@ class ResendSender:
         发送邮件
 
         Args:
-            to: 收件人邮箱
+            to: 收件人邮箱（字符串或列表）
             subject: 邮件标题
             html_content: HTML 内容
             from_email: 发件人邮箱
@@ -38,15 +38,24 @@ class ResendSender:
         Returns:
             {"success": bool, "message": str, "id": str}
         """
-        if not to:
-            return {"success": False, "message": "收件人邮箱为空"}
+        # 统一转换为列表
+        if isinstance(to, str):
+            recipients = [to]
+        else:
+            recipients = to
+
+        if not recipients:
+            return {"success": False, "message": "收件人邮箱为空", "id": None}
 
         try:
-            print(f"📧 正在发送邮件到: {to}")
+            print(f"📧 正在发送邮件到: {len(recipients)} 个收件人")
+            for recipient in recipients:
+                print(f"   - {recipient}")
 
+            # Resend 批量发送（最多50个）
             params = {
                 "from": from_email,
-                "to": [to],
+                "to": recipients,
                 "subject": subject,
                 "html": html_content,
             }
@@ -57,7 +66,7 @@ class ResendSender:
 
             return {
                 "success": True,
-                "message": "邮件发送成功",
+                "message": f"邮件发送成功到 {len(recipients)} 个收件人",
                 "id": response.get("id"),
                 "response": response
             }

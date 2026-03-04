@@ -4,14 +4,26 @@
 import os
 
 # ============================================================================
-# Claude API 配置 (复用现有配置)
+# LLM API Configuration
 # ============================================================================
-# API 基础地址（支持 OpenAI 兼容格式）
-LLM_BASE_URL = os.getenv("LLM_BASE_URL") or "https://api.siliconflow.cn/v1"  # 硅基流动
-LLM_API_KEY = os.getenv("LLM_API_KEY") or os.getenv("ZHIPU_API_KEY")  # 兼容旧配置
+# API Base URL (OpenAI compatible format)
+# Examples:
+# - SiliconFlow: https://api.siliconflow.cn/v1
+# - OpenAI: https://api.openai.com/v1
+# - Zhipu: https://open.bigmodel.cn/api/anthropic
+LLM_BASE_URL = os.getenv("LLM_BASE_URL")
 
-# 模型配置
-LLM_MODEL = os.getenv("LLM_MODEL") or "zai-org/GLM-4.6V"  # 硅基流动模型
+# API Key (required)
+LLM_API_KEY = os.getenv("LLM_API_KEY") or os.getenv("ZHIPU_API_KEY")
+
+# Model name
+# Examples:
+# - SiliconFlow: zai-org/GLM-4.6V
+# - OpenAI: gpt-4, gpt-3.5-turbo
+# - Zhipu: claude-3-5-sonnet-20241022
+LLM_MODEL = os.getenv("LLM_MODEL")
+
+# Max tokens
 LLM_MAX_TOKENS = 8192
 
 # 兼容旧变量名
@@ -33,7 +45,19 @@ OUTPUT_DIR = os.getenv("OUTPUT_DIR", "docs")
 GITHUB_PAGES_URL = os.getenv("GITHUB_PAGES_URL", "")
 
 # ============================================================================
-# 邮件通知配置
+# 邮件发送方式配置
+# ============================================================================
+# 邮件发送方式: "resend" 或 "smtp"
+EMAIL_METHOD = os.getenv("EMAIL_METHOD", "resend")
+
+# ============================================================================
+# Resend 邮件配置
+# ============================================================================
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+
+# ============================================================================
+# SMTP 邮件配置（163、QQ等）
 # ============================================================================
 def _get_env_int(key: str, default: int) -> int:
     """获取整数环境变量，处理空字符串情况"""
@@ -47,7 +71,21 @@ SMTP_HOST = os.getenv("SMTP_HOST")
 SMTP_PORT = _get_env_int("SMTP_PORT", 587)
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-NOTIFICATION_TO = os.getenv("NOTIFICATION_TO")
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL")
+
+# 收件人邮箱（支持多个，用逗号分隔）
+# Example: user1@example.com,user2@example.com,user3@example.com
+_EMAIL_TO = os.getenv("EMAIL_TO", "")
+
+def _parse_email_list(email_str: str) -> list:
+    """解析邮箱列表"""
+    if not email_str:
+        return []
+    emails = [e.strip() for e in email_str.split(",")]
+    return [e for e in emails if e]
+
+EMAIL_TO = _parse_email_list(_EMAIL_TO)
+NOTIFICATION_TO = EMAIL_TO  # 兼容旧变量名
 
 # ============================================================================
 # 8种主题配色方案

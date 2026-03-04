@@ -13,9 +13,15 @@ sys.path.insert(0, project_root)
 
 from src.config import (
     LLM_API_KEY,
+    EMAIL_METHOD,
     RESEND_API_KEY,
-    EMAIL_TO,
     RESEND_FROM_EMAIL,
+    SMTP_HOST,
+    SMTP_PORT,
+    SMTP_USER,
+    SMTP_PASSWORD,
+    SMTP_FROM_EMAIL,
+    EMAIL_TO,
     DB_PATH,
     DB_RETENTION_DAYS,
     TOP_N_DETAILS
@@ -27,6 +33,7 @@ from src.database import Database
 from src.trend_analyzer import TrendAnalyzer
 from src.html_reporter import HTMLReporter
 from src.resend_sender import ResendSender
+from src.smtp_sender import SMTPSender
 
 
 def print_banner():
@@ -56,17 +63,33 @@ def main():
     # 检查环境变量
     if not LLM_API_KEY:
         print("❌ 错误: LLM_API_KEY 环境变量未设置")
-        print("   请设置硅基流动 API Key")
+        print("   请设置 LLM API Key")
         sys.exit(1)
 
-    if not RESEND_API_KEY:
-        print("❌ 错误: RESEND_API_KEY 环境变量未设置")
-        print("   请设置 Resend API Key")
-        sys.exit(1)
-
-    if not EMAIL_TO:
+    if not EMAIL_TO or len(EMAIL_TO) == 0:
         print("❌ 错误: EMAIL_TO 环境变量未设置")
-        print("   请设置收件人邮箱")
+        print("   请设置收件人邮箱（支持多个，用逗号分隔）")
+        sys.exit(1)
+
+    print(f"[收件人] 共 {len(EMAIL_TO)} 个")
+    for i, email in enumerate(EMAIL_TO, 1):
+        print(f"   {i}. {email}")
+    print()
+
+    # 检查邮件发送方式配置
+    if EMAIL_METHOD == "resend":
+        if not RESEND_API_KEY:
+            print("❌ 错误: 使用 Resend 发送邮件，但 RESEND_API_KEY 未设置")
+            print("   请设置 RESEND_API_KEY 或改用 SMTP 方式")
+            sys.exit(1)
+    elif EMAIL_METHOD == "smtp":
+        if not SMTP_HOST or not SMTP_USER or not SMTP_PASSWORD:
+            print("❌ 错误: 使用 SMTP 发送邮件，但配置不完整")
+            print("   请设置 SMTP_HOST, SMTP_USER, SMTP_PASSWORD")
+            sys.exit(1)
+    else:
+        print(f"❌ 错误: 不支持的邮件发送方式 '{EMAIL_METHOD}'")
+        print("   请设置为 'resend' 或 'smtp'")
         sys.exit(1)
 
     # 获取今日日期
@@ -129,13 +152,29 @@ def main():
 
         # 7. 发送邮件
         print(f"[步骤 7/7] 发送邮件...")
-        sender = ResendSender(RESEND_API_KEY)
-        result = sender.send_email(
-            to=EMAIL_TO,
-            subject=f"📊 Skills Trending Daily - {today}",
-            html_content=html_content,
-            from_email=RESEND_FROM_EMAIL
-        )
+        print(f"   使用方式: {EMAIL_METHOD.upper()}")
+
+        if EMAIL_METHOD == "resend":
+            sender = ResendSender(RESEND_API_KEY)
+            result = sender.send_email(
+                to=EMAIL_TO,  # 现在是列表
+                subject=f"📊 Skills Trending Daily - {today}",
+                html_content=html_content,
+                from_email=RESEND_FROM_EMAIL
+            )
+        else:  # smtp
+            sender = SMTPSender(
+                host=SMTP_HOST,
+                port=SMTP_PORT,
+                username=SMTP_USER,
+                password=SMTP_PASSWORD
+            )
+            result = sender.send_email(
+                to=EMAIL_TO,  # 现在是列表
+                subject=f"📊 Skills Trending Daily - {today}",
+                html_content=html_content,
+                from_email=SMTP_FROM_EMAIL
+            )
 
         if result["success"]:
             print(f"   ✅ 邮件发送成功! ID: {result['id']}")
